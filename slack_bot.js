@@ -81,7 +81,47 @@ var bot = controller.spawn({
     token: process.env.token
 }).startRTM();
 
-controller.hears(['(.*)? (.*) #(.*)', '(.*)\n(.*)\n(.*)'], 'direct_mention', function(bot, message) {
+var messageArrays = {
+    forumPost: {
+        for: 'If you see this, it let an admin know!',
+        commands: ['(.*)? (.*) #(.*)', '(.*)\n(.*)\n(.*)'],
+        canUse: false
+    },
+    forumHelp: {
+        for: 'Lists available commands',
+        commands: ['Help', 'help'],
+        canUse: true
+    },
+    forumHelp: {
+        for: 'Lists forum posting templates',
+        commands: ['Forum Help', 'Forum help', 'forum help', 'Forum', 'forum'],
+        canUse: true
+    },
+    botTimeline: {
+        for: 'Lists the bot\'s timeline',
+        commands: ['Timeline', 'TimeLine', 'timeLine', 'timeline', 'MileStone', 'Milestone', 'mileStone', 'milestone'],
+        canUse: true
+    }
+};
+
+controller.hears(['Help'], 'direct_mention', function(bot, message) {
+
+    var replyMessage = 'Here is a list of valid commands for you to give me.\n';
+
+    replyMessage += '*Command   | Purpose*';
+    replyMessage += '\n*--------------------------------*\n';
+    for (command in messageArrays) {
+        if (messageArrays[command].canUse == true) {
+            replyMessage += messageArrays[command].commands[0];
+            replyMessage += " | ";
+            replyMessage += messageArrays[command].for;
+            replyMessage += '\n--------------------------------\n';
+        }
+    }
+    bot.reply(message, replyMessage);
+});
+
+controller.hears(messageArrays.forumPost.commands, 'direct_mention', function(bot, message) {
     var userMessage = message.match[0];
     var question = '';
     var body = '';
@@ -113,9 +153,6 @@ controller.hears(['(.*)? (.*) #(.*)', '(.*)\n(.*)\n(.*)'], 'direct_mention', fun
         method: 'POST'
     };
     request(options, function(err, res, body) {
-        console.log('Err: ' + err);
-        console.log('StatusCode: ' + res.statusCode);
-        console.log('Body: ' + body);
         switch(res.statusCode) {
             case 200:
                 bot.reply(message, 'Post published! Here is your link: ' + forumLinkMaker(JSON.parse(body)));
@@ -135,18 +172,19 @@ controller.hears(['(.*)? (.*) #(.*)', '(.*)\n(.*)\n(.*)'], 'direct_mention', fun
     });
 });
 
-controller.hears(['forum help', 'forum', 'help'], 'direct_mention', function(bot, message) {
+controller.hears(messageArrays.forumHelp.commands, 'direct_mention', function(bot, message) {
 
-    bot.reply(message, 'Please use one of the following formats!\n1:\n```<Question>? <Body> #<Tag>```\n2:\n```<Question>\n<Body>\n<Tag>```');
+    // bot.reply(message, 'Please use one of the following formats to post to the forum!\n1:\n```<Question>? <Body> #<Tag>```\n2:\n```<Question>\n<Body>\n<Tag>```');
+    bot.reply(message, '');
 });
 
-controller.hears(['timeline', 'timelines', 'progress', 'milestone', 'milestones'], 'direct_mention', function(bot, message) {
+controller.hears(messageArrays.botTimeline.commands, 'direct_mention', function(bot, message) {
 
-    bot.reply(message, '~1: Hosted fully~\n2: Better help commands\n3: Forum reward tracker');
+    bot.reply(message, '~1: Hosted on heroku~\n2: Better help commands\n3: Forum reward tracker');
 });
 
 controller.hears(['(.*)'], 'direct_mention', function(bot, message) {
-
+    
     bot.reply(message, 'Unrecognized command!');
 });
 
