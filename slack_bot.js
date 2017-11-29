@@ -351,7 +351,7 @@ controller.hears(['shutdown'], 'direct_message,direct_mention,mention', function
         ]);
     });
 });
-
+*/
 
 controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'],
     'direct_message,direct_mention,mention', function(bot, message) {
@@ -382,4 +382,3 @@ function formatUptime(uptime) {
     uptime = uptime + ' ' + unit;
     return uptime;
 }
-*/
