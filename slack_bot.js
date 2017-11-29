@@ -183,24 +183,6 @@ controller.hears(messageArrays.botTimeline.commands, 'direct_mention', function(
     bot.reply(message, '~1: Hosted on heroku~\n2: Better help commands\n3: Forum reward tracker');
 });
 
-controller.hears(['(.*)'], 'direct_mention', function(bot, message) {
-    
-    bot.reply(message, 'Unrecognized command!');
-});
-
-controller.hears(['(.*)'], 'direct_message', function(bot, message) {
-
-    bot.reply(message, 'Please do not message me directly!');
-});
-
-function forumLinkMaker(body) {
-    var url = 'https://discourse.nativescript.org/t/';
-    url += body.topic_slug;
-    url += '/';
-    url += body.topic_id;
-    return url;
-}
-
 /*
 controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function(bot, message) {
 
@@ -353,17 +335,24 @@ controller.hears(['shutdown'], 'direct_message,direct_mention,mention', function
 });
 */
 
-controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'],
-    'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'], 'direct_mention', function(bot, message) {
 
-        var hostname = os.hostname();
-        var uptime = formatUptime(process.uptime());
+    var hostname = os.hostname();
+    var uptime = formatUptime(process.uptime());
 
-        bot.reply(message,
-            ':robot_face: I am a bot named <@' + bot.identity.name +
-             '>. I have been running for ' + uptime + ' on ' + hostname + '.');
+    bot.reply(message, ':robot_face: I am a bot named <@' + bot.identity.name + '>. I have been running for ' + uptime + ' on ' + hostname + '.');
 
-    });
+});
+    
+controller.hears(['(.*)'], 'direct_mention', function(bot, message) {
+    
+    bot.reply(message, 'Unrecognized command!');
+});
+
+controller.hears(['(.*)'], 'direct_message', function(bot, message) {
+
+    bot.reply(message, 'Please do not message me directly!');
+});
 
 function formatUptime(uptime) {
     var unit = 'second';
@@ -381,4 +370,12 @@ function formatUptime(uptime) {
 
     uptime = uptime + ' ' + unit;
     return uptime;
+}
+
+function forumLinkMaker(body) {
+    var url = 'https://discourse.nativescript.org/t/';
+    url += body.topic_slug;
+    url += '/';
+    url += body.topic_id;
+    return url;
 }
