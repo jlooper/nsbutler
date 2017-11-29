@@ -22,7 +22,8 @@
   },
   "scripts": {
     "pretest": "jscs ./lib/",
-    "test": "mocha tests/*.js"
+    "test": "mocha tests/*.js",
+    "start": "set token=xoxb-280275379399-HOQYlQCKYy4nxeP2V0haZ3Lc&& set apiKey=eefc3466fe3c1038ebf59636bca955bc903b397019af8c2d8074cd75bae0dfb4&& node slack_bot.js"
   },
   "repository": {
     "type": "git",
