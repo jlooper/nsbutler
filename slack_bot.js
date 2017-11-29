@@ -71,16 +71,99 @@ if (!process.env.token) {
 
 var Botkit = require('./lib/Botkit.js');
 var os = require('os');
+var request = require('request');
 
 var controller = Botkit.slackbot({
-    debug: true,
+    debug: false,
 });
 
 var bot = controller.spawn({
     token: process.env.token
 }).startRTM();
 
+controller.hears(['(.*)? (.*) #(.*)', '(.*)\n(.*)\n(.*)'], 'direct_mention', function(bot, message) {
+    var userMessage = message.match[0];
+    var question = '';
+    var body = '';
+    var tagText = '';
+    var tag = 0;
+    if (userMessage.indexOf('\n') == -1) {
+        var index1 = userMessage.indexOf('? ');
+        question = userMessage.substring(0, index1 + 1);
+        var index2 = userMessage.indexOf(' #');
+        body = userMessage.substring(index1 + 2, index2);
+        tagText = String(userMessage.substring(index2 + 2));
+    } else {
+        var index1 = userMessage.indexOf('\n');
+        question = userMessage.substring(0, index1);
+        var index2 = userMessage.lastIndexOf('\n');
+        body = userMessage.substring(index1 + 1, index2);
+        tagText = userMessage.substring(index2 + 1);
+    }
+    if (tagText == 'test' || tagText == '33') {
+        tag = 33;
+    }
+    console.log('Question: "' + question + '"');
+    console.log('Body: "' + body + '"');
+    console.log('Tag: "' + tagText + '"');
+    var bodyParams = 'title=' + question + '&raw=' + body + '&category=' + tag;
+    console.log(bodyParams.replace(/\s+/g, '%20').replace(/([?])/g, '%3F').replace(/([?])/g, '%2D'));
+    var options = {
+        url: 'https://discourse.nativescript.org/posts?api_key=' + process.env.apiKey + '&api_username=nsbutler&' + bodyParams.replace(/\s+/g, '%20').replace(/([?])/g, '%3F').replace(/([?])/g, '%2D').replace(/(['])/g, '%27').replace('#', ''),
+        method: 'POST'
+    };
+    request(options, function(err, res, body) {
+        console.log('Err: ' + err);
+        console.log('StatusCode: ' + res.statusCode);
+        console.log('Body: ' + body);
+        switch(res.statusCode) {
+            case 200:
+                bot.reply(message, 'Post published! Here is your link: ' + forumLinkMaker(JSON.parse(body)));
+                break;
+            case 422:
+                var replyMessage = 'Error!'
+                var errors = JSON.parse(body).errors;
+                for (err in errors) {
+                    replyMessage += '\n' + errors[err];
+                }
+                bot.reply(message, replyMessage);
+                break;
+            default:
+                bot.reply(message, 'Unhandled error code: ' + res.statusCode);
+                break;
+        }
+    });
+});
 
+controller.hears(['forum help', 'forum', 'help'], 'direct_mention', function(bot, message) {
+
+    bot.reply(message, 'Please use one of the following formats!\n1:\n```<Question>? <Body> #<Tag>```\n2:\n```<Question>\n<Body>\n<Tag>```');
+});
+
+controller.hears(['timeline', 'timelines', 'progress', 'milestone', 'milestones'], 'direct_mention', function(bot, message) {
+
+    bot.reply(message, '~1: Hosted fully~\n2: Better help commands\n3: Forum reward tracker');
+});
+
+controller.hears(['(.*)'], 'direct_mention', function(bot, message) {
+
+    bot.reply(message, 'Unrecognized command!');
+});
+
+controller.hears(['(.*)'], 'direct_message', function(bot, message) {
+
+    bot.reply(message, 'Please do not message me directly!');
+});
+
+function forumLinkMaker(body) {
+    var url = 'https://discourse.nativescript.org/t/';
+    url += body.topic_slug;
+    url += '/';
+    url += body.topic_id;
+    return url;
+}
+
+/*
 controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function(bot, message) {
 
     bot.api.reactions.add({
@@ -261,3 +344,4 @@ function formatUptime(uptime) {
     uptime = uptime + ' ' + unit;
     return uptime;
 }
+*/
