@@ -81,72 +81,131 @@ var bot = controller.spawn({
     token: process.env.token
 }).startRTM();
 
+var messageArrays = {
+    forumPost: {
+        for: 'If you see this, it let an admin know!',
+        commands: ['(.*)? (.*) #(.*)', '(.*)\n(.*)\n(.*)'],
+        canUse: false
+    },
+    forumHelp: {
+        for: 'Lists available commands',
+        commands: ['Help', 'help'],
+        canUse: true
+    },
+    forumHelp: {
+        for: 'Lists forum posting templates',
+        commands: ['Forum Help', 'Forum help', 'forum help', 'Forum', 'forum'],
+        canUse: true
+    },
+    botTimeline: {
+        for: 'Lists the bot\'s timeline',
+        commands: ['Timeline', 'TimeLine', 'timeLine', 'timeline', 'MileStone', 'Milestone', 'mileStone', 'milestone'],
+        canUse: true
+    }
+};
 
-controller.hears(['forum help'], 'direct_mention', function(bot, message) {
-    bot.reply(message, 'Please post a new topic using one of the following formats:');
-    bot.reply(message, '<Question>? <Body> #<Tag>');
-    bot.reply(message, '<Question>\n<Body>\n<Tag>');
+controller.hears(['Help'], 'direct_mention', function(bot, message) {
+
+    var replyMessage = 'Here is a list of valid commands for you to give me.\n';
+
+    replyMessage += '*Command   | Purpose*';
+    replyMessage += '\n*--------------------------------*\n';
+    for (command in messageArrays) {
+        if (messageArrays[command].canUse == true) {
+            replyMessage += messageArrays[command].commands[0];
+            replyMessage += " | ";
+            replyMessage += messageArrays[command].for;
+            replyMessage += '\n--------------------------------\n';
+        }
+    }
+    bot.reply(message, replyMessage);
 });
-controller.hears([], 'direct_mention', function(bot, message) {
-    bot.reply(message, message.match[0]);
-});
-controller.hears(['(.*)? (.*) #(.*)', '(.*)\n(.*)\n(.*)'], 'direct_mention', function(bot, message) {
-    var userMessage = message.match[0].trim();
+
+controller.hears(messageArrays.forumPost.commands, 'direct_mention', function(bot, message) {
+    var userMessage = message.match[0];
     var question = '';
     var body = '';
     var tagText = '';
     var tag = 0;
     if (userMessage.indexOf('\n') == -1) {
-        var index1 = userMessage.indexOf('? ') + 1;
-        question = userMessage.substring(0, index1);
+        var index1 = userMessage.indexOf('? ');
+        question = userMessage.substring(0, index1 + 1);
         var index2 = userMessage.indexOf(' #');
-        body = userMessage.substring(index1 + 1, index2);
-        tagText = userMessage.substring(index2 + 2);
+        body = userMessage.substring(index1 + 2, index2);
+        tagText = String(userMessage.substring(index2 + 2));
     } else {
         var index1 = userMessage.indexOf('\n');
         question = userMessage.substring(0, index1);
-        console.log('Question: "' + question + '"')
         var index2 = userMessage.lastIndexOf('\n');
         body = userMessage.substring(index1 + 1, index2);
-        console.log('Body: "' + body + '"')
         tagText = userMessage.substring(index2 + 1);
-        console.log('Tag: "' + tagText + '"')
     }
     if (tagText == 'test' || tagText == '33') {
         tag = 33;
     }
-    var url = 'https://discourse.nativescript.org/posts?api_key=' + process.env.apiKey + '&api_username=nsbutler';
-    var bodyParams = 'title=' + question + '&category=' + tag + '&raw=' + body;
+    console.log('Question: "' + question + '"');
+    console.log('Body: "' + body + '"');
+    console.log('Tag: "' + tagText + '"');
+    var bodyParams = 'title=' + question + '&raw=' + body + '&category=' + tag;
+    console.log(bodyParams.replace(/\s+/g, '%20').replace(/([?])/g, '%3F').replace(/([?])/g, '%2D'));
     var options = {
-        url: 'https://discourse.nativescript.org/posts?api_key=' + process.env.apiKey + '&api_username=nsbutler&' + bodyParams.replace(/\s+/g, '%20').replace(/([?])/g, '%3F').replace(/([!])/g, '%21'),
+        url: 'https://discourse.nativescript.org/posts?api_key=' + process.env.apiKey + '&api_username=nsbutler&' + bodyParams.replace(/\s+/g, '%20').replace(/([?])/g, '%3F').replace(/([?])/g, '%2D').replace(/(['])/g, '%27').replace('#', ''),
         method: 'POST'
     };
     request(options, function(err, res, body) {
-        console.log('Error: ', err);
-        console.log('StatusCode: ', res.statusCode);
-        console.log('Body: ', body);
-        switch (res.statusCode) {
+        switch(res.statusCode) {
             case 200:
-                bot.reply(message, 'Posted successfully!');
+                bot.reply(message, 'Posted successfully! Here is your link: ' + forumLinkMaker(JSON.parse(body)));
                 break;
             case 422:
-                bot.reply(message, 'Error posting! Error:');
-                for (err in JSON.parse(body).errors) {
-                    bot.reply(message, JSON.parse(body).errors[err]);
+                var replyMessage = 'Error posting! Error:'
+                var errors = JSON.parse(body).errors;
+                for (err in errors) {
+                    replyMessage += '\n' + errors[err];
                 }
+                bot.reply(message, replyMessage);
                 break;
             default:
-                bot.reply(message, 'Unhandled StatusCode: ' + res.statusCode);
+                bot.reply(message, 'Unhandled error code: ' + res.statusCode);
+                break;
         }
     });
 });
 
-controller.hears(['(.*)'], 'direct_message', function(bot, message) {
+controller.hears(messageArrays.forumHelp.commands, 'direct_mention', function(bot, message) {
 
-    bot.reply(message, 'Please do not message me directly!');
+    // bot.reply(message, 'Please use one of the following formats to post to the forum!\n1:\n```<Question>? <Body> #<Tag>```\n2:\n```<Question>\n<Body>\n<Tag>```');
+    bot.reply(message, '');
+});
+
+controller.hears(messageArrays.botTimeline.commands, 'direct_mention', function(bot, message) {
+
+    bot.reply(message, '~1: Hosted on heroku~\n2: Better help commands\n3: Forum reward tracker');
 });
 
 /*
+controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function(bot, message) {
+
+    bot.api.reactions.add({
+        timestamp: message.ts,
+        channel: message.channel,
+        name: 'nativescript',
+    }, function(err, res) {
+        if (err) {
+            bot.botkit.log('Failed to add emoji reaction :(', err);
+        }
+    });
+
+
+    controller.storage.users.get(message.user, function(err, user) {
+        if (user && user.name) {
+            bot.reply(message, 'Hello ' + user.name + '!!');
+        } else {
+            bot.reply(message, 'Hello. I am at your service!');
+        }
+    });
+});
+
 controller.hears(['vscode'], 'direct_message,direct_mention,mention', function(bot, message) {
 
     bot.api.reactions.add({
@@ -274,18 +333,26 @@ controller.hears(['shutdown'], 'direct_message,direct_mention,mention', function
         ]);
     });
 });
+*/
 
-controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'],
-    'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'], 'direct_mention', function(bot, message) {
 
-        var hostname = os.hostname();
-        var uptime = formatUptime(process.uptime());
+    var hostname = os.hostname();
+    var uptime = formatUptime(process.uptime());
 
-        bot.reply(message,
-            ':robot_face: I am a bot named <@' + bot.identity.name +
-             '>. I have been running for ' + uptime + ' on ' + hostname + '.');
+    bot.reply(message, ':robot_face: I am a bot named <@' + bot.identity.name + '>. I have been running for ' + uptime + ' on ' + hostname + '.');
 
-    });
+});
+    
+controller.hears(['(.*)'], 'direct_mention', function(bot, message) {
+    
+    bot.reply(message, 'Unrecognized command!');
+});
+
+controller.hears(['(.*)'], 'direct_message', function(bot, message) {
+
+    bot.reply(message, 'Please do not message me directly!');
+});
 
 function formatUptime(uptime) {
     var unit = 'second';
@@ -304,4 +371,11 @@ function formatUptime(uptime) {
     uptime = uptime + ' ' + unit;
     return uptime;
 }
-*/
+
+function forumLinkMaker(body) {
+    var url = 'https://discourse.nativescript.org/t/';
+    url += body.topic_slug;
+    url += '/';
+    url += body.topic_id;
+    return url;
+}
