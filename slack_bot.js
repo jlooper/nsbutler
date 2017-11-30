@@ -101,6 +101,11 @@ var messageArrays = {
         for: 'Lists the bot\'s timeline',
         commands: ['Timeline', 'TimeLine', 'timeLine', 'timeline', 'MileStone', 'Milestone', 'mileStone', 'milestone'],
         canUse: true
+    },
+    updateCategories: {
+        for: 'Updates forum category list',
+        commands: ['Update', 'update'],
+        canUse: true
     }
 };
 
@@ -108,7 +113,7 @@ controller.hears(['Help'], 'direct_mention', function(bot, message) {
 
     var replyMessage = 'Here is a list of valid commands for you to give me.\n';
 
-    replyMessage += '*Command   | Purpose*';
+    replyMessage += '*Command | Purpose*';
     replyMessage += '\n*--------------------------------*\n';
     for (command in messageArrays) {
         if (messageArrays[command].canUse == true) {
@@ -143,11 +148,7 @@ controller.hears(messageArrays.forumPost.commands, 'direct_mention', function(bo
     if (tagText == 'test' || tagText == '33') {
         tag = 33;
     }
-    console.log('Question: "' + question + '"');
-    console.log('Body: "' + body + '"');
-    console.log('Tag: "' + tagText + '"');
     var bodyParams = 'title=' + question + '&raw=' + body + '&category=' + tag;
-    console.log(bodyParams.replace(/\s+/g, '%20').replace(/([?])/g, '%3F').replace(/([?])/g, '%2D'));
     var options = {
         url: 'https://discourse.nativescript.org/posts?api_key=' + process.env.apiKey + '&api_username=nsbutler&' + bodyParams.replace(/\s+/g, '%20').replace(/([?])/g, '%3F').replace(/([?])/g, '%2D').replace(/(['])/g, '%27').replace('#', ''),
         method: 'POST'
@@ -182,6 +183,32 @@ controller.hears(messageArrays.botTimeline.commands, 'direct_mention', function(
 
     bot.reply(message, '~1: Hosted on heroku~\n2: Better help commands\n3: Forum reward tracker');
 });
+
+// controller.hears(messageArrays.updateCategories.commands, 'direct_mention', function(bot, message) {
+
+//     var options = {
+//         url: 'https://discourse.nativescript.org/categories.json?api_key=' + process.env.apiKey + '&api_username=nsbutler',
+//         method: 'POST'
+//     };
+//     request(options, function(err, res, body) {
+//         switch(res.statusCode) {
+//             case 200:
+//                 bot.reply(message, 'Updated!');
+//                 break;
+//             case 422:
+//                 var replyMessage = 'Error posting! Error:'
+//                 var errors = JSON.parse(body).errors;
+//                 for (err in errors) {
+//                     replyMessage += '\n' + errors[err];
+//                 }
+//                 bot.reply(message, replyMessage);
+//                 break;
+//             default:
+//                 bot.reply(message, 'Unhandled error code: ' + res.statusCode);
+//                 break;
+//         }
+//     });
+// });
 
 /*
 controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function(bot, message) {
