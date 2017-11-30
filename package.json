@@ -10,7 +10,7 @@
     "https-proxy-agent": "^1.0.0",
     "jfs": "^0.2.6",
     "mustache": "^2.2.1",
-    "request": "^2.83.0",
+    "request": "^2.67.0",
     "ware": "^1.3.0",
     "ws": "^1.0.1"
   },
@@ -22,7 +22,8 @@
   },
   "scripts": {
     "pretest": "jscs ./lib/",
-    "test": "mocha tests/*.js"
+    "test": "mocha tests/*.js",
+    "start": "token=xoxb-280275379399-HOQYlQCKYy4nxeP2V0haZ3Lc apiKey=eefc3466fe3c1038ebf59636bca955bc903b397019af8c2d8074cd75bae0dfb4 node slack_bot.js"
   },
   "repository": {
     "type": "git",
