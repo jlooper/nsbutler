@@ -143,6 +143,7 @@ if (!process.env.token) {
 var Botkit = require('./lib/Botkit.js');
 
 var os = require('os');
+var request = require('request');
 
 var request = require('request');
 
@@ -496,6 +497,44 @@ controller.hears(messageArrays.updateCategories.commands, 'direct_mention', func
 
 /*
 
+controller.hears(messageArrays.forumHelp.commands, 'direct_mention', function(bot, message) {
+
+    // bot.reply(message, 'Please use one of the following formats to post to the forum!\n1:\n```<Question>? <Body> #<Tag>```\n2:\n```<Question>\n<Body>\n<Tag>```');
+    bot.reply(message, '');
+});
+
+controller.hears(messageArrays.botTimeline.commands, 'direct_mention', function(bot, message) {
+
+    bot.reply(message, '~1: Hosted on heroku~\n2: Better help commands\n3: Forum reward tracker');
+});
+
+// controller.hears(messageArrays.updateCategories.commands, 'direct_mention', function(bot, message) {
+
+//     var options = {
+//         url: 'https://discourse.nativescript.org/categories.json?api_key=' + process.env.apiKey + '&api_username=nsbutler',
+//         method: 'POST'
+//     };
+//     request(options, function(err, res, body) {
+//         switch(res.statusCode) {
+//             case 200:
+//                 bot.reply(message, 'Updated!');
+//                 break;
+//             case 422:
+//                 var replyMessage = 'Error posting! Error:'
+//                 var errors = JSON.parse(body).errors;
+//                 for (err in errors) {
+//                     replyMessage += '\n' + errors[err];
+//                 }
+//                 bot.reply(message, replyMessage);
+//                 break;
+//             default:
+//                 bot.reply(message, 'Unhandled error code: ' + res.statusCode);
+//                 break;
+//         }
+//     });
+// });
+
+/*
 controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function(bot, message) {
 
     
@@ -793,10 +832,7 @@ controller.hears(['shutdown'], 'direct_message,direct_mention,mention', function
     });
 
 });
-
 */
-
-    
 
 controller.hears(messageArrays.identify.commands, 'direct_mention', function(bot, message) {
 
