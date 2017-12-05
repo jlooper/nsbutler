@@ -306,7 +306,6 @@ controller.hears(messageArrays.userCreate.commands, 'direct_message', function(b
                 user_data = getUserStorage(user);
                 if (user_data != undefined) {
                     user_data.discourseID = discourseID;
-                    user_data.isAdmin = isAdmin;
                     controller.storage.users.save(user_data, function(err) {
                         error = err;
                     });
