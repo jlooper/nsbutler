@@ -63,7 +63,7 @@ Read all about it here:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-//require('daemon')();
+require('daemon')();
 
 if (!process.env.token) {
     console.log('Error: Specify token in environment');
