@@ -397,11 +397,10 @@ controller.hears(messageArrays.checkUserID.commands, 'direct_message', function(
 
 controller.hears(['(.*)'], 'direct_message', function(bot, message) {
     
-    
     controller.storage.users.get(message.user, function(err, user_data) {
         if (user_data != undefined) {
             if (user_data.isAdmin == true) {
-                bot.reply(message, 'Hello! How can I help?');
+                bot.reply(message, 'Hello Admin! How can I help?');
             } else {
                 bot.reply(message, 'Please do not message me directly!');
             }
