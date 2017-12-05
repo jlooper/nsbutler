@@ -63,7 +63,7 @@ Read all about it here:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-// require('daemon')();
+require('daemon')();
 
 if (!process.env.token) {
     console.log('Error: Specify token in environment');
@@ -328,33 +328,31 @@ controller.hears(messageArrays.userCreate.commands, 'direct_message', function(b
 
 controller.hears(messageArrays.discourseUsernameSet.commands, 'direct_message', function(bot, message) {
 
-    var isAdmin = false;
     controller.storage.users.get(message.user, function(err, user_data) {
         if (user_data != undefined) {
-            isAdmin = user_data.isAdmin;
+            if (user_data.isAdmin == true) {
+                var error;
+                user_data = getUserStorage(message.match[1]);
+                if (user_data != undefined) {
+                    user_data.discourseID = message.match[2];
+                    controller.storage.users.save(user_data, function(err) {
+                        error = err;
+                    });
+                } else {
+                    controller.storage.users.save({id: message.match[1], discourseID: message.match[2], isAdmin: false}, function(err) {
+                        error = err;
+                    });
+                }
+                if (error == null || error == undefined) {
+                    bot.reply(message, 'User <@' + message.match[1] + '>\'s DiscourseID set to ' + message.match[2]);
+                } else {
+                    bot.reply(message, 'Error!\n' + error);
+                }
+            } else {
+                bot.reply(message, 'Please do not message me directly!');
+            }
         }
     });
-    if (isAdmin == true) {
-        var error;
-        user_data = getUserStorage(message.match[1]);
-        if (user_data != undefined) {
-            user_data.discourseID = message.match[2];
-            controller.storage.users.save(user_data, function(err) {
-                error = err;
-            });
-        } else {
-            controller.storage.users.save({id: message.match[1], discourseID: message.match[2], isAdmin: false}, function(err) {
-                error = err;
-            });
-        }
-        if (error == null || error == undefined) {
-            bot.reply(message, 'User <@' + message.match[1] + '>\'s DiscourseID set to ' + message.match[2]);
-        } else {
-            bot.reply(message, 'Error!\n' + error);
-        }
-    } else {
-        bot.reply(message, 'Please do not message me directly!');
-    }
 });
 
 controller.hears(messageArrays.adminChange.commands, 'direct_message', function(bot, message) {
@@ -362,30 +360,29 @@ controller.hears(messageArrays.adminChange.commands, 'direct_message', function(
     var isAdmin = false;
     controller.storage.users.get(message.user, function(err, user_data) {
         if (user_data != undefined) {
-            isAdmin = user_data.isAdmin;
+            if (user_data.isAdmin == true) {
+                var error;
+                user_data = getUserStorage(message.match[1]);
+                if (user_data != undefined) {
+                    user_data.isAdmin = true;
+                    controller.storage.users.save(user_data, function(err) {
+                        error = err;
+                    });
+                } else {
+                    controller.storage.users.save({id: message.match[1], discourseID: '', isAdmin: true}, function(err) {
+                        error = err;
+                    });
+                }
+                if (error == null || error == undefined) {
+                    bot.reply(message, 'User <@' + message.match[1] + '> was successfully granted Admin permissions!');
+                } else {
+                    bot.reply(message, 'Error!\n' + error);
+                }
+            } else {
+                bot.reply(message, 'Please do not message me directly!');
+            }
         }
     });
-    if (isAdmin == true) {
-        var error;
-        user_data = getUserStorage(message.match[1]);
-        if (user_data != undefined) {
-            user_data.isAdmin = true;
-            controller.storage.users.save(user_data, function(err) {
-                error = err;
-            });
-        } else {
-            controller.storage.users.save({id: message.match[1], discourseID: '', isAdmin: true}, function(err) {
-                error = err;
-            });
-        }
-        if (error == null || error == undefined) {
-            bot.reply(message, 'User <@' + message.match[1] + '> was successfully granted Admin permissions!');
-        } else {
-            bot.reply(message, 'Error!\n' + error);
-        }
-    } else {
-        bot.reply(message, 'Please do not message me directly!');
-    }
 });
 
 controller.hears(messageArrays.checkUserID.commands, 'direct_message', function(bot, message) {
@@ -395,17 +392,16 @@ controller.hears(messageArrays.checkUserID.commands, 'direct_message', function(
 
 controller.hears(['(.*)'], 'direct_message', function(bot, message) {
     
-    var isAdmin = true;
+    var isAdmin = false;
     controller.storage.users.get(message.user, function(err, user_data) {
         if (user_data != undefined) {
-            isAdmin = user_data.isAdmin;
+            if (user_data.isAdmin == true) {
+                bot.reply(message, 'Hello! How can I help?');
+            } else {
+                bot.reply(message, 'Please do not message me directly!');
+            }
         }
     });
-    if (isAdmin == true) {
-        bot.reply(message, 'Hello! How can I help?');
-    } else {
-        bot.reply(message, 'Please do not message me directly!');
-    }
 });
 
 
