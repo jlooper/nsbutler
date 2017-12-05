@@ -289,39 +289,37 @@ controller.hears(['(.*)'], 'direct_mention', function(bot, message) {
 
 controller.hears(messageArrays.userCreate.commands, 'direct_message', function(bot, message) {
 
-    var isAdmin = true;
-    // controller.storage.users.get(message.user, function(err, user_data) {
-    //     if (user_data != undefined) {
-    //         isAdmin = user_data.isAdmin;
-    //     }
-    // });
-    if (isAdmin == true) {
-        var endUserTag = message.match[0].indexOf('> ');
-        var split = message.match[0].indexOf(' | ');
-        var user = message.match[0].substring(3, endUserTag)
-        var discourseID = message.match[0].substring(endUserTag + 2, split);
-        var isAdmin = Boolean(message.match[0].substring(split + 3));
-        var error;
-        user_data = getUserStorage(user);
+    controller.storage.users.get(message.user, function(err, user_data) {
         if (user_data != undefined) {
-            user_data.discourseID = discourseID;
-            user_data.isAdmin = isAdmin;
-            controller.storage.users.save(user_data, function(err) {
-                error = err;
-            });
-        } else {
-            controller.storage.users.save({id: user, discourseID: discourseID, isAdmin: isAdmin}, function(err) {
-                error = err;
-            });
+            if(user_data.isAdmin == true) {
+                var endUserTag = message.match[0].indexOf('> ');
+                var split = message.match[0].indexOf(' | ');
+                var user = message.match[0].substring(3, endUserTag)
+                var discourseID = message.match[0].substring(endUserTag + 2, split);
+                var isAdmin = Boolean(message.match[0].substring(split + 3));
+                var error;
+                user_data = getUserStorage(user);
+                if (user_data != undefined) {
+                    user_data.discourseID = discourseID;
+                    user_data.isAdmin = isAdmin;
+                    controller.storage.users.save(user_data, function(err) {
+                        error = err;
+                    });
+                } else {
+                    controller.storage.users.save({id: user, discourseID: discourseID, isAdmin: isAdmin}, function(err) {
+                        error = err;
+                    });
+                }
+                if (error == null || error == undefined) {
+                    bot.reply(message, 'User storage created!');
+                } else {
+                    bot.reply(message, 'Error!\n' + error);
+                }
+            } else {
+                bot.reply(message, 'Please do not message me directly!');
+            }
         }
-        if (error == null || error == undefined) {
-            bot.reply(message, 'User storage created!');
-        } else {
-            bot.reply(message, 'Error!\n' + error);
-        }
-    } else {
-        bot.reply(message, 'Please do not message me directly!');
-    }
+    });
 });
 
 controller.hears(messageArrays.discourseUsernameSet.commands, 'direct_message', function(bot, message) {
