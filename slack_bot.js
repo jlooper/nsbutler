@@ -63,7 +63,7 @@ Read all about it here:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-require('daemon')();
+// require('daemon')();
 
 if (!process.env.token) {
     console.log('Error: Specify token in environment');
@@ -77,17 +77,12 @@ var request = require('request');
     
 var controller = Botkit.slackbot({
     debug: false,
+    json_file_store: './database'
 });
     
 var bot = controller.spawn({
     token: process.env.token
 }).startRTM();
-    
-var adminListButler = [
-    {name: 'Connor Sleight', id: 'U2ZL4BP27'},
-    {name: 'Jen Looper', id: 'U0LCQUEF5'},
-    {name: 'Shiva Prasad', id: 'U6NN2S6KG'}
-];
     
 var categoryTypes = [];
     
@@ -120,6 +115,21 @@ var messageArrays = {
     adminList: {
         for: 'Lists all NSButler admin!',
         commands: ['Admin'],
+        canUse: true
+    },
+    discourseUsernameSet: {
+        for: 'If you see this, it let an admin know!',
+        commands: ['DiscourseUser <@(.*)> -(.*)'],
+        canUse: false
+    },
+    adminChange: {
+        for: 'If you see this, it let an admin know!',
+        commands: ['Admin <@(.*)> (.*)'],
+        canUse: false
+    },
+    userCreate: {
+        for: 'If you see this, it let an admin know!',
+        commands: ['UserProfile <@(.*)> (.*) | (.*)'],
         canUse: false
     },
     forumHelp: {
@@ -178,8 +188,13 @@ controller.hears(messageArrays.forumPost.commands, 'direct_mention', function(bo
         return;
     }
     var bodyParams = 'title=' + question + '&raw=' + body + '&category=' + category;
+    var discourseUser = 'nsbutler';
+    var userStorage = getUserStorage(message.user);
+    if (userStorage != undefined) {
+        discourseUser = userStorage.discourseID;
+    }
     var options = {
-        url: 'https://discourse.nativescript.org/posts?api_key=' + process.env.apiKey + '&api_username=nsbutler&' + bodyParams.replace(/\s+/g, '%20').replace(/([?])/g, '%3F').replace(/([?])/g, '%2D').replace(/(['])/g, '%27').replace('#', ''),
+        url: 'https://discourse.nativescript.org/posts?api_key=' + process.env.apiKey + '&api_username=' + discourseID + '&' + bodyParams.replace(/\s+/g, '%20').replace(/([?])/g, '%3F').replace(/([?])/g, '%2D').replace(/(['])/g, '%27').replace('#', ''),
         method: 'POST'
     };
     request(options, function(err, res, body) {
@@ -249,44 +264,220 @@ controller.hears(messageArrays.updateCategories.commands, 'direct_mention', func
     getCategories(bot, message, true);
 });
 
-/*
-
-controller.hears(messageArrays.forumHelp.commands, 'direct_mention', function(bot, message) {
-
-    // bot.reply(message, 'Please use one of the following formats to post to the forum!\n1:\n```<Question>? <Body> #<Tag>```\n2:\n```<Question>\n<Body>\n<Tag>```');
-    bot.reply(message, '');
+controller.hears(messageArrays.identify.commands, 'direct_mention', function(bot, message) {
+    
+    var hostname = os.hostname();
+    var uptime = formatUptime(process.uptime());
+    bot.reply(message, ':robot_face: I am a bot named <@' + bot.identity.name + '>. I have been running for ' + uptime + ' on ' + hostname + '.');
+});
+    
+controller.hears(messageArrays.here.commands, 'direct_mention', function(bot, message) {
+    
+    bot.reply(message, 'I am online and in the <#' + message.channel + '> channel!');
+});
+    
+controller.hears(messageArrays.taco.commands, 'direct_mention', function(bot, message) {
+    
+    bot.reply(message, 'As much as I appreciate your generosity, please do not send me tacos as i cannot receive them!');
+});
+    
+controller.hears(['(.*)'], 'direct_mention', function(bot, message) {
+    
+    console.log(message);
+    bot.reply(message, 'Unrecognized command!');
 });
 
-controller.hears(messageArrays.botTimeline.commands, 'direct_mention', function(bot, message) {
+controller.hears(messageArrays.userCreate.commands, 'direct_message', function(bot, message) {
 
-    bot.reply(message, '~1: Hosted on heroku~\n2: Better help commands\n3: Forum reward tracker');
+    var isAdmin = true;
+    // controller.storage.users.get(message.user, function(err, user_data) {
+    //     if (user_data != undefined) {
+    //         isAdmin = user_data.isAdmin;
+    //     }
+    // });
+    if (isAdmin == true) {
+        var endUserTag = message.match[0].indexOf('> ');
+        var split = message.match[0].indexOf(' | ');
+        var user = message.match[0].substring(3, endUserTag)
+        var discourseID = message.match[0].substring(endUserTag + 2, split);
+        var isAdmin = Boolean(message.match[0].substring(split + 3));
+        var error;
+        user_data = getUserStorage(user);
+        if (user_data != undefined) {
+            user_data.discourseID = discourseID;
+            user_data.isAdmin = isAdmin;
+            controller.storage.users.save(user_data, function(err) {
+                error = err;
+            });
+        } else {
+            controller.storage.users.save({id: user, discourseID: discourseID, isAdmin: isAdmin}, function(err) {
+                error = err;
+            });
+        }
+        if (error == null || error == undefined) {
+            bot.reply(message, 'User storage created!');
+        } else {
+            bot.reply(message, 'Error!\n' + error);
+        }
+    } else {
+        bot.reply(message, 'Please do not message me directly!');
+    }
 });
 
-// controller.hears(messageArrays.updateCategories.commands, 'direct_mention', function(bot, message) {
+controller.hears(messageArrays.discourseUsernameSet.commands, 'direct_message', function(bot, message) {
 
-//     var options = {
-//         url: 'https://discourse.nativescript.org/categories.json?api_key=' + process.env.apiKey + '&api_username=nsbutler',
-//         method: 'POST'
-//     };
-//     request(options, function(err, res, body) {
-//         switch(res.statusCode) {
-//             case 200:
-//                 bot.reply(message, 'Updated!');
-//                 break;
-//             case 422:
-//                 var replyMessage = 'Error posting! Error:'
-//                 var errors = JSON.parse(body).errors;
-//                 for (err in errors) {
-//                     replyMessage += '\n' + errors[err];
-//                 }
-//                 bot.reply(message, replyMessage);
-//                 break;
-//             default:
-//                 bot.reply(message, 'Unhandled error code: ' + res.statusCode);
-//                 break;
-//         }
-//     });
-// });
+    var isAdmin = false;
+    controller.storage.users.get(message.user, function(err, user_data) {
+        if (user_data != undefined) {
+            isAdmin = user_data.isAdmin;
+        }
+    });
+    if (isAdmin == true) {
+        var error;
+        user_data = getUserStorage(message.match[1]);
+        if (user_data != undefined) {
+            user_data.discourseID = message.match[2];
+            controller.storage.users.save(user_data, function(err) {
+                error = err;
+            });
+        } else {
+            controller.storage.users.save({id: message.match[1], discourseID: message.match[2], isAdmin: false}, function(err) {
+                error = err;
+            });
+        }
+        if (error == null || error == undefined) {
+            bot.reply(message, 'User <@' + message.match[1] + '>\'s DiscourseID set to ' + message.match[2]);
+        } else {
+            bot.reply(message, 'Error!\n' + error);
+        }
+    } else {
+        bot.reply(message, 'Please do not message me directly!');
+    }
+});
+
+controller.hears(messageArrays.adminChange.commands, 'direct_message', function(bot, message) {
+
+    var isAdmin = false;
+    controller.storage.users.get(message.user, function(err, user_data) {
+        if (user_data != undefined) {
+            isAdmin = user_data.isAdmin;
+        }
+    });
+    if (isAdmin == true) {
+        var error;
+        user_data = getUserStorage(message.match[1]);
+        if (user_data != undefined) {
+            user_data.isAdmin = message.match[2];
+            controller.storage.users.save(user_data, function(err) {
+                error = err;
+            });
+        } else {
+            controller.storage.users.save({id: message.match[1], discourseID: '', isAdmin: message.match[2]}, function(err) {
+                error = err;
+            });
+        }
+        if (error == null || error == undefined) {
+            bot.reply(message, 'User <@' + message.match[1] + '> was successfully granted Admin permissions!');
+        } else {
+            bot.reply(message, 'Error!\n' + error);
+        }
+    } else {
+        bot.reply(message, 'Please do not message me directly!');
+    }
+});
+
+controller.hears(['(.*)'], 'direct_message', function(bot, message) {
+
+    var isAdmin = true;
+    controller.storage.users.get(message.user, function(err, user_data) {
+        if (user_data != undefined) {
+            isAdmin = user_data.isAdmin;
+        }
+    });
+    if (isAdmin == true) {
+        bot.reply(message, 'Hello! How can I help?');
+    } else {
+        bot.reply(message, 'Please do not message me directly!');
+    }
+});
+    
+function formatUptime(uptime) {
+    var unit = 'second';
+    if (uptime > 60) {
+        uptime = uptime / 60;
+        unit = 'minute';
+    }
+    if (uptime > 60) {
+        uptime = uptime / 60;
+        unit = 'hour';
+    }
+    if (uptime != 1) {
+        unit = unit + 's';
+    }
+    uptime = uptime + ' ' + unit;
+    return uptime;
+};
+    
+function forumLinkMaker(body) {
+    var url = 'https://discourse.nativescript.org/t/';
+    url += body.topic_slug;
+    url += '/';
+    url += body.topic_id;
+    return url;
+};
+    
+function categoryChecker(categoryText) {
+    if (categoryText.substr(0, 1) == '#') {
+        categoryText = categoryText.substring(1)
+    }
+    for (category in categoryTypes) {
+        if (categoryText == categoryTypes[category].name || categoryText == categoryTypes[category].id) {
+            return categoryTypes[category].id;
+        }
+    }
+    return -1;
+};
+
+function getCategories(bot, message, updateOnly) {
+    
+    var options = {
+        url: 'https://discourse.nativescript.org/categories.json?api_key=' + process.env.apiKey + '&api_username=nsbutler',
+        method: 'GET'
+    };
+    request(options, function(err, res, body) {
+        switch(res.statusCode) {
+            case 200:
+                if (updateCategoryArray(JSON.parse(body).category_list.categories) == true && updateOnly == true) {
+                    bot.reply(message, 'Updated!');
+                }
+                break;
+            default:
+                if(updateOnly == true) {
+                    bot.reply(message, 'Unhandled error code: ' + res.statusCode);
+                } else {
+                    bot.reply(message, 'Error while getting category list: ' + res.statusCode);
+                }
+                break;
+        }
+    });
+};
+    
+function updateCategoryArray(newList) {
+    categoryList = [];
+    for (category in newList) {
+        if (newList[category].read_restricted == false) {
+            var value = {id: newList[category].id, name: newList[category].name, slug: newList[category].slug};
+            categoryTypes.push(value);
+        }
+    };
+    return true;
+};
+
+function getUserStorage(userID) {
+    controller.storage.users.get(userID, function(err, user_data) {
+        return user_data;
+    });
+};
 
 /*
 controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function(bot, message) {
@@ -432,125 +623,3 @@ controller.hears(['shutdown'], 'direct_message,direct_mention,mention', function
     });
 };
 */
-controller.hears(messageArrays.identify.commands, 'direct_mention', function(bot, message) {
-    
-    var hostname = os.hostname();
-    var uptime = formatUptime(process.uptime());
-    bot.reply(message, ':robot_face: I am a bot named <@' + bot.identity.name + '>. I have been running for ' + uptime + ' on ' + hostname + '.');
-});
-    
-controller.hears(messageArrays.here.commands, 'direct_mention', function(bot, message) {
-    
-    bot.reply(message, 'I am online and in the <#' + message.channel + '> channel!');
-});
-    
-controller.hears(messageArrays.taco.commands, 'direct_mention', function(bot, message) {
-    
-    bot.reply(message, 'As much as I appreciate your generosity, please do not send me tacos as i cannot receive them!');
-});
-    
-controller.hears(messageArrays.adminList.commands, 'direct_mention', function(bot, message) {
-    
-    var replyMessage = 'Here is a list of the NSButler admins:';
-    for (admin in adminListButler) {
-        replyMessage += '\n' + adminListButler[admin].name;
-    }
-    bot.reply(message, replyMessage);
-});
-    
-controller.hears(['(.*)'], 'direct_mention', function(bot, message) {
-    
-    console.log(message);
-    bot.reply(message, 'Unrecognized command!');
-});
-    
-// controller.hears(messageArrays.postMessage.commands, 'direct_message', function(bot, message) {
-//
-//     var userMessage = message.match[1];
-//     var sendTo = message.match[2];
-//     var channel = message.match[3];
-//     if (message.user == 'U2ZL4BP27' || message.user == 'U0LCQUEF5') {
-//         bot.reply(message, 'I will send ' + userMessage + ' to <@' + sendTo + '> in <#' + channel + '>!');
-//         bot.say(message/*{text: '<@' + sendTo + '> you have a new message!\n>' + userMessage, channel: channel, type: 'message'}*/);
-//         console.log(bot.say())
-//     } else {
-//         bot.reply(message, 'Please do not message me directly!');
-//     }
-// });
-    
-controller.hears(['(.*)'], 'direct_message', function(bot, message) {
-    
-    bot.reply(message, 'Please do not message me directly!');
-});
-    
-function formatUptime(uptime) {
-    var unit = 'second';
-    if (uptime > 60) {
-        uptime = uptime / 60;
-        unit = 'minute';
-    }
-    if (uptime > 60) {
-        uptime = uptime / 60;
-        unit = 'hour';
-    }
-    if (uptime != 1) {
-        unit = unit + 's';
-    }
-    uptime = uptime + ' ' + unit;
-    return uptime;
-};
-    
-function forumLinkMaker(body) {
-    var url = 'https://discourse.nativescript.org/t/';
-    url += body.topic_slug;
-    url += '/';
-    url += body.topic_id;
-    return url;
-};
-    
-function categoryChecker(categoryText) {
-    if (categoryText.substr(0, 1) == '#') {
-        categoryText = categoryText.substring(1)
-    }
-    for (category in categoryTypes) {
-        if (categoryText == categoryTypes[category].name || categoryText == categoryTypes[category].id) {
-            return categoryTypes[category].id;
-        }
-    }
-    return -1;
-};
-
-function getCategories(bot, message, updateOnly) {
-    
-    var options = {
-        url: 'https://discourse.nativescript.org/categories.json?api_key=' + process.env.apiKey + '&api_username=nsbutler',
-        method: 'GET'
-    };
-    request(options, function(err, res, body) {
-        switch(res.statusCode) {
-            case 200:
-                if (updateCategoryArray(JSON.parse(body).category_list.categories) == true && updateOnly == true) {
-                    bot.reply(message, 'Updated!');
-                }
-                break;
-            default:
-                if(updateOnly == true) {
-                    bot.reply(message, 'Unhandled error code: ' + res.statusCode);
-                } else {
-                    bot.reply(message, 'Error while getting category list: ' + res.statusCode);
-                }
-                break;
-        }
-    });
-};
-    
-function updateCategoryArray(newList) {
-    categoryList = [];
-    for (category in newList) {
-        if (newList[category].read_restricted == false) {
-            var value = {id: newList[category].id, name: newList[category].name, slug: newList[category].slug};
-            categoryTypes.push(value);
-        }
-    };
-    return true;
-};
