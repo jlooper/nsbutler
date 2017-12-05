@@ -132,6 +132,11 @@ var messageArrays = {
         commands: ['UserProfile <@(.*)> (.*) | (.*)'],
         canUse: false
     },
+    checkUserID: {
+        for: 'If you see this, it let an admin know!',
+        commands: ['UserID'],
+        canUse: false
+    },
     forumHelp: {
         for: 'Lists available commands',
         commands: ['Help'],
@@ -384,8 +389,13 @@ controller.hears(messageArrays.adminChange.commands, 'direct_message', function(
     }
 });
 
-controller.hears(['(.*)'], 'direct_message', function(bot, message) {
+controller.hears(messageArrays.checkUserID.commands, 'direct_message', function(bot, message) {
+    
+    bot.reply(message, 'Your user ID for Slack is: ' + message.user);
+});
 
+controller.hears(['(.*)'], 'direct_message', function(bot, message) {
+    
     var isAdmin = true;
     controller.storage.users.get(message.user, function(err, user_data) {
         if (user_data != undefined) {
@@ -398,7 +408,8 @@ controller.hears(['(.*)'], 'direct_message', function(bot, message) {
         bot.reply(message, 'Please do not message me directly!');
     }
 });
-    
+
+
 function formatUptime(uptime) {
     var unit = 'second';
     if (uptime > 60) {
