@@ -322,6 +322,8 @@ controller.hears(messageArrays.userCreate.commands, 'direct_message', function(b
             } else {
                 bot.reply(message, 'Please do not message me directly!');
             }
+        } else {
+            bot.reply(message, 'Please do not message me directly!');
         }
     });
 });
@@ -329,6 +331,7 @@ controller.hears(messageArrays.userCreate.commands, 'direct_message', function(b
 controller.hears(messageArrays.discourseUsernameSet.commands, 'direct_message', function(bot, message) {
 
     controller.storage.users.get(message.user, function(err, user_data) {
+        console.log(user_data)
         if (user_data != undefined) {
             if (user_data.isAdmin == true) {
                 var error;
@@ -351,6 +354,8 @@ controller.hears(messageArrays.discourseUsernameSet.commands, 'direct_message', 
             } else {
                 bot.reply(message, 'Please do not message me directly!');
             }
+        } else {
+            bot.reply(message, 'Please do not message me directly!');
         }
     });
 });
@@ -381,6 +386,8 @@ controller.hears(messageArrays.adminChange.commands, 'direct_message', function(
             } else {
                 bot.reply(message, 'Please do not message me directly!');
             }
+        } else {
+            bot.reply(message, 'Please do not message me directly!');
         }
     });
 });
@@ -400,6 +407,8 @@ controller.hears(['(.*)'], 'direct_message', function(bot, message) {
             } else {
                 bot.reply(message, 'Please do not message me directly!');
             }
+        } else {
+            bot.reply(message, 'Please do not message me directly!');
         }
     });
 });
