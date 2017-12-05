@@ -331,7 +331,6 @@ controller.hears(messageArrays.userCreate.commands, 'direct_message', function(b
 controller.hears(messageArrays.discourseUsernameSet.commands, 'direct_message', function(bot, message) {
 
     controller.storage.users.get(message.user, function(err, user_data) {
-        console.log(user_data)
         if (user_data != undefined) {
             if (user_data.isAdmin == true) {
                 var error;
@@ -401,6 +400,7 @@ controller.hears(['(.*)'], 'direct_message', function(bot, message) {
     
     var isAdmin = false;
     controller.storage.users.get(message.user, function(err, user_data) {
+        console.log(user_data)
         if (user_data != undefined) {
             if (user_data.isAdmin == true) {
                 bot.reply(message, 'Hello! How can I help?');
