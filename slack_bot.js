@@ -399,7 +399,7 @@ controller.hears(['(.*)'], 'direct_message', function(bot, message) {
     
     
     controller.storage.users.all(function(err, all_user_data) {
-        console.log(user_data)
+        console.log(all_user_data)
     });
     controller.storage.users.get(message.user, function(err, user_data) {
         console.log(user_data)
