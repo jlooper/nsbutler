@@ -124,7 +124,7 @@ var messageArrays = {
     },
     adminChange: {
         for: 'If you see this, it let an admin know!',
-        commands: ['Admin <@(.*)> (.*)'],
+        commands: ['Admin <@(.*)>'],
         canUse: false
     },
     userCreate: {
@@ -365,12 +365,12 @@ controller.hears(messageArrays.adminChange.commands, 'direct_message', function(
         var error;
         user_data = getUserStorage(message.match[1]);
         if (user_data != undefined) {
-            user_data.isAdmin = message.match[2];
+            user_data.isAdmin = true;
             controller.storage.users.save(user_data, function(err) {
                 error = err;
             });
         } else {
-            controller.storage.users.save({id: message.match[1], discourseID: '', isAdmin: message.match[2]}, function(err) {
+            controller.storage.users.save({id: message.match[1], discourseID: '', isAdmin: true}, function(err) {
                 error = err;
             });
         }
