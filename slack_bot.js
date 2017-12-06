@@ -73,7 +73,6 @@ if (!process.env.token) {
 var Botkit = require('./lib/Botkit.js');
 var os = require('os')
 var request = require('request');
-var request = require('request');
     
 var controller = Botkit.slackbot({
     debug: false,
@@ -94,7 +93,7 @@ var messageArrays = {
     },
     forumPost: {
         for: 'If you see this, it let an admin know!',
-        commands: ['(.*)? (.*) #(.*)', '(.*)\n(.*)\n(.*)'],
+        commands: ['(.*)? (.*) #(.*)', '(.*)? (.*) <#(.*)>', '(.*)\n(.*)\n(.*)'],
         canUse: false
     },
     identify: {
@@ -111,11 +110,6 @@ var messageArrays = {
         for: 'If you see this, it let an admin know!',
         commands: [':taco:'],
         canUse: false
-    },
-    adminList: {
-        for: 'Lists all NSButler admin!',
-        commands: ['Admin'],
-        canUse: true
     },
     discourseUsernameSet: {
         for: 'If you see this, it let an admin know!',
@@ -172,11 +166,17 @@ controller.hears(messageArrays.forumPost.commands, 'direct_mention', function(bo
     var categoryText = '';
     var category = 0;
     if (userMessage.indexOf('\n') == -1) {
-        var index1 = userMessage.indexOf('? ');
-        question = userMessage.substring(0, index1 + 1);
-        var index2 = userMessage.indexOf(' #');
-        body = userMessage.substring(index1 + 2, index2);
-        categoryText = String(userMessage.substring(index2 + 2));
+        var index = userMessage.indexOf('? ');
+        question = userMessage.substring(0, index + 1);
+        var temp1 = userMessage.indexOf(' #');
+        var temp2 = userMessage.indexOf(' <#');
+        if (temp1 != -1) {
+            body = userMessage.substring(index + 2, temp1);
+            categoryText = String(userMessage.substring(temp1 + 2));
+        } else {
+            body = userMessage.substring(index + 2, temp2);
+            categoryText = String(userMessage.substr(temp2 + 13, userMessage.length - temp2 - 14));
+        }
     } else {
         var index1 = userMessage.indexOf('\n');
         question = userMessage.substring(0, index1);
@@ -191,6 +191,9 @@ controller.hears(messageArrays.forumPost.commands, 'direct_mention', function(bo
     if (category == -1) {
         bot.reply(message, 'Invalid category!');
         return;
+    } else if (category == -2) {
+        bot.reply(message, 'Please update the category list!');
+        return;
     }
     var bodyParams = 'title=' + question + '&raw=' + body + '&category=' + category;
     var discourseUser = 'nsbutler';
@@ -199,7 +202,7 @@ controller.hears(messageArrays.forumPost.commands, 'direct_mention', function(bo
         discourseUser = userStorage.discourseID;
     }
     var options = {
-        url: 'https://discourse.nativescript.org/posts?api_key=' + process.env.apiKey + '&api_username=' + discourseID + '&' + bodyParams.replace(/\s+/g, '%20').replace(/([?])/g, '%3F').replace(/([?])/g, '%2D').replace(/(['])/g, '%27').replace('#', ''),
+        url: 'https://discourse.nativescript.org/posts?api_key=' + process.env.apiKey + '&api_username=' + discourseUser + '&' + bodyParams.replace(/\s+/g, '%20').replace(/([?])/g, '%3F').replace(/([?])/g, '%2D').replace(/(['])/g, '%27').replace('#', ''),
         method: 'POST'
     };
     request(options, function(err, res, body) {
@@ -225,6 +228,11 @@ controller.hears(messageArrays.forumPost.commands, 'direct_mention', function(bo
                 break;
         }
     });
+});
+
+controller.hears(messageArrays.forumHelp.commands, 'direct_mention', function(bot, message) {
+
+    bot.reply(message, 'Please use one of the following formats to post to the forum!\n1:\n```<Question - min 15 chars>? <Body - min 20 chars> #<Category - valid from list (@nsbutler category)>```\n2:\n```<Question - min 15 chars>\n<Body - min 20 chars>\n<Category - valid from list (@nsbutler category)>```');
 });
     
 controller.hears(['Help'], 'direct_mention', function(bot, message) {
@@ -252,11 +260,6 @@ controller.hears(messageArrays.categoryList.commands, 'direct_mention', function
         replyMessage += categoryTypes[category].name;
     }
     bot.reply(message, replyMessage);
-});
-    
-controller.hears(messageArrays.forumHelp.commands, 'direct_mention', function(bot, message) {
-    
-    bot.reply(message, 'Please use one of the following formats to post to the forum!\n1:\n```<Question - min 15 chars>? <Body - min 20 chars> #<Category - valid from list (@nsbutler category)>```\n2:\n```<Question - min 15 chars>\n<Body - min 20 chars>\n<Category - valid from list (@nsbutler category)>```');
 });
     
 controller.hears(messageArrays.botTimeline.commands, 'direct_mention', function(bot, message) {
@@ -303,7 +306,6 @@ controller.hears(messageArrays.userCreate.commands, 'direct_message', function(b
                 var user = message.match[0].substring(startUserTag + 2, endUserTag)
                 var discourseID = message.match[0].substring(endUserTag + 2, split);
                 var isAdmin = Boolean(message.match[0].substring(split + 3));
-                console.log(Boolean(message.match[0].substring(split + 3)))
                 user_data = getUserStorage(user);
                 if (user_data != undefined) {
                     user_data.discourseID = discourseID;
@@ -450,9 +452,13 @@ function categoryChecker(categoryText) {
     if (categoryText.substr(0, 1) == '#') {
         categoryText = categoryText.substring(1)
     }
-    for (category in categoryTypes) {
-        if (categoryText == categoryTypes[category].name || categoryText == categoryTypes[category].id) {
-            return categoryTypes[category].id;
+    if (categoryTypes.length == 0) {
+        return -2
+    } else {
+        for (category in categoryTypes) {
+            if (categoryText == categoryTypes[category].name.toLowerCase() || categoryText == categoryTypes[category].id) {
+                return categoryTypes[category].id;
+            }
         }
     }
     return -1;
