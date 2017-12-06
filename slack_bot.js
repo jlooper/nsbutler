@@ -63,7 +63,7 @@ Read all about it here:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-require('daemon')();
+// require('daemon')();
 
 if (!process.env.token) {
     console.log('Error: Specify token in environment');
@@ -129,7 +129,7 @@ var messageArrays = {
     },
     userCreate: {
         for: 'If you see this, it let an admin know!',
-        commands: ['UserProfile <@(.*)> (.*) | (.*)'],
+        commands: ['UserProfile <@(.*)> (.*)'],
         canUse: false
     },
     checkUserID: {
@@ -303,6 +303,7 @@ controller.hears(messageArrays.userCreate.commands, 'direct_message', function(b
                 var user = message.match[0].substring(startUserTag + 2, endUserTag)
                 var discourseID = message.match[0].substring(endUserTag + 2, split);
                 var isAdmin = Boolean(message.match[0].substring(split + 3));
+                console.log(Boolean(message.match[0].substring(split + 3)))
                 user_data = getUserStorage(user);
                 if (user_data != undefined) {
                     user_data.discourseID = discourseID;
