@@ -456,7 +456,7 @@ function categoryChecker(categoryText) {
         return -2
     } else {
         for (category in categoryTypes) {
-            if (categoryText == categoryTypes[category].name.toLowerCase() || categoryText == categoryTypes[category].id) {
+            if (categoryText.toLowerCase() == categoryTypes[category].name.toLowerCase() || categoryText == categoryTypes[category].id) {
                 return categoryTypes[category].id;
             }
         }
